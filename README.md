@@ -44,7 +44,7 @@ yufan-translate/
 
 ### 方式一：下载压缩包
 
-1. 从 [落地页](#) 或 [GitHub Releases](https://github.com/cgbin24/yufan-translate) 下载 `yufan-translate.zip`
+1. 从 [落地页](https://yufan.cgbin.xyz) 或 [GitHub Releases](https://github.com/cgbin24/yufan-translate/releases) 下载 `yufan-translate.zip`
 2. 解压压缩包
 3. 打开 `chrome://extensions/`
 4. 开启右上角「开发者模式」
