@@ -1,0 +1,38 @@
+/* Yufan landing page — soft, cream, sage green + soft blue */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&family=Noto+Serif+SC:wght@500;600;700;900&family=Cormorant+Garamond:wght@500;600;700&display=swap");
+
+.App {
+  min-height: 100vh;
+  background:
+    radial-gradient(60% 45% at 82% 8%, rgba(162, 188, 224, 0.28) 0%, transparent 60%),
+    radial-gradient(60% 45% at 12% 88%, rgba(158, 179, 166, 0.28) 0%, transparent 60%),
+    #fdfbf7;
+  color: #2a312d;
+  font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+  overflow-x: hidden;
+}
+
+.serif {
+  font-family: "Noto Serif SC", "Cormorant Garamond", "Songti SC", serif;
+  letter-spacing: -0.01em;
+}
+
+.grain {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.35;
+  z-index: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.19 0 0 0 0 0.17 0 0 0 0.5 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  mix-blend-mode: multiply;
+}
+
+/* Reset a couple button defaults */
+button {
+  font-family: inherit;
+}
+
+/* Prevent horizontal scroll from decorative blobs */
+body {
+  overflow-x: hidden;
+}

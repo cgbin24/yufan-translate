@@ -1,0 +1,32 @@
+{
+  "name": "yufan-translate-landing",
+  "version": "1.0.0",
+  "private": true,
+  "homepage": "https://github.com/cgbin24",
+  "author": {
+    "name": "cgbin24",
+    "url": "https://me.cgbin.xyz"
+  },
+  "description": "语翻 Yufan Translate — 划词即译的 Chrome 扩展落地页",
+  "dependencies": {
+    "framer-motion": "11.18.0",
+    "lucide-react": "0.516.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "react-router-dom": "7.15.0"
+  },
+  "scripts": {
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.3.4",
+    "autoprefixer": "10.4.20",
+    "postcss": "8.5.10",
+    "tailwindcss": "3.4.17",
+    "tailwindcss-animate": "1.0.7",
+    "vite": "5.4.10"
+  }
+}

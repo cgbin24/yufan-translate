@@ -1,0 +1,418 @@
+/* Yufan Translate — content styles.
+   Namespaced with .yufan- to avoid host-page collisions. */
+
+#yufan-translate-pill,
+#yufan-translate-panel {
+  /* all: initial; */
+  font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont, "PingFang SC",
+    "Microsoft YaHei", sans-serif;
+  z-index: 2147483000; /* above nearly everything */
+  color: #2a312d;
+  box-sizing: border-box;
+}
+
+#yufan-translate-pill {
+  position: absolute; /* pill 用文档坐标，跟随划词位置 */
+}
+
+#yufan-translate-panel {
+  position: fixed; /* panel 始终 fixed，用视窗坐标，避免 absolute/fixed 切换导致乱跳 */
+}
+
+#yufan-translate-pill *,
+#yufan-translate-panel * {
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+/* ---------- Pill button ---------- */
+.yufan-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px 7px 10px;
+  background: #ffffff;
+  color: #2a312d;
+  border-radius: 999px;
+  border: 1px solid rgba(158, 179, 166, 0.55);
+  box-shadow: 0 8px 26px rgba(74, 96, 84, 0.22),
+    0 1px 2px rgba(0, 0, 0, 0.06);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  user-select: none;
+  opacity: 0;
+  transform: translateY(6px) scale(0.96);
+  transition: opacity 220ms cubic-bezier(0.25, 1, 0.5, 1),
+    transform 260ms cubic-bezier(0.25, 1, 0.5, 1),
+    box-shadow 180ms ease,
+    background-color 180ms ease;
+}
+
+.yufan-pill-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.yufan-pill:hover {
+  background: #fbfaf5;
+  box-shadow: 0 12px 32px rgba(74, 96, 84, 0.26),
+    0 2px 4px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.yufan-pill svg {
+  color: #6d8a7b;
+}
+
+.yufan-pill span {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Panel ---------- */
+.yufan-panel {
+  width: 300px;
+  max-width: 92vw;
+  padding: 12px 14px 10px;
+  background: #ffffff;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(158, 179, 166, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(58, 78, 68, 0.28),
+    0 4px 10px rgba(0, 0, 0, 0.06);
+  opacity: 0;
+  transform: translateY(6px) scale(0.98);
+  transition: opacity 220ms cubic-bezier(0.25, 1, 0.5, 1),
+    transform 260ms cubic-bezier(0.25, 1, 0.5, 1);
+  font-size: 14px;
+  color: #2a312d;
+}
+
+.yufan-panel-in {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.yufan-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  cursor: move;
+  cursor: grab;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.yufan-panel-head:active {
+  cursor: grabbing;
+}
+/* 关闭按钮保持指针光标，不显示拖拽光标 */
+.yufan-panel-close {
+  cursor: pointer;
+}
+/* 拖拽中禁用过渡动画，避免位置更新抖动 */
+.yufan-panel.yufan-dragging {
+  transition: none !important;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.yufan-panel-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #6b7c73;
+  letter-spacing: 0.04em;
+}
+
+.yufan-brand-logo {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  object-fit: contain;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px rgba(158, 179, 166, 0.25);
+}
+
+.yufan-brand-name {
+  font-family: "Noto Serif SC", "Cormorant Garamond", "Songti SC", serif;
+  font-weight: 500;
+  font-size: 13px;
+  color: #3a4a44;
+}
+
+.yufan-panel-close {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  padding: 4px;
+  color: #6b7c73;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.yufan-panel-close:hover {
+  background: rgba(158, 179, 166, 0.15);
+  color: #2a312d;
+}
+
+.yufan-panel-source {
+  font-size: 12.5px;
+  color: #6b7c73;
+  line-height: 1.55;
+  max-height: 68px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #f4f5f0;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+/* ---------- Target language selector (custom dropdown) ---------- */
+.yufan-target-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+.yufan-target-select {
+  position: relative;
+  width: auto;
+  min-width: 120px;
+  max-width: 180px;
+}
+.yufan-target-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 8px 4px 10px;
+  background: #f4f5f0;
+  border: 1px solid rgba(158, 179, 166, 0.4);
+  border-radius: 8px;
+  color: #3a4a44;
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+.yufan-target-trigger:hover {
+  background: #eef1ea;
+  border-color: rgba(158, 179, 166, 0.7);
+}
+.yufan-target-label-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.yufan-target-caret {
+  flex-shrink: 0;
+  color: #6b7c73;
+  transition: transform 200ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+.yufan-target-open .yufan-target-caret {
+  transform: rotate(180deg);
+}
+.yufan-target-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 100%;
+  width: max-content;
+  max-width: 220px;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid rgba(158, 179, 166, 0.35);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(42, 49, 45, 0.16),
+    0 2px 6px rgba(42, 49, 45, 0.06);
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 50;
+  opacity: 0;
+  transform: translateY(-4px) scale(0.98);
+  transform-origin: top right;
+  pointer-events: none;
+  transition: opacity 150ms ease,
+    transform 150ms cubic-bezier(0.25, 1, 0.5, 1);
+}
+.yufan-target-open .yufan-target-menu {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+.yufan-target-option {
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #2a312d;
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+.yufan-target-option:hover {
+  background: rgba(158, 179, 166, 0.14);
+}
+.yufan-target-option-selected {
+  background: rgba(158, 179, 166, 0.2);
+  color: #6d8a7b;
+  font-weight: 500;
+}
+.yufan-target-check {
+  opacity: 0;
+  color: #6d8a7b;
+  flex-shrink: 0;
+}
+.yufan-target-option-selected .yufan-target-check {
+  opacity: 1;
+}
+.yufan-target-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.yufan-target-menu::-webkit-scrollbar-thumb {
+  background: rgba(158, 179, 166, 0.35);
+  border-radius: 999px;
+}
+.yufan-target-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Source text ---------- */
+.yufan-panel-source {
+  font-size: 12.5px;
+  color: #6b7c73;
+  line-height: 1.55;
+  max-height: 60px;
+  overflow-y: auto;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: #f4f5f0;
+  word-break: break-word;
+  white-space: pre-wrap;
+  margin-bottom: 8px;
+}
+
+/* ---------- Result (framed with depth) ---------- */
+.yufan-panel-result {
+  font-size: 15px;
+  line-height: 1.7;
+  color: #1f2a26;
+  min-height: 28px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfa 100%);
+  border: 1px solid rgba(158, 179, 166, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 8px rgba(74, 96, 84, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.yufan-error {
+  color: #b04a3e;
+  font-size: 13px;
+  font-weight: 400;
+}
+
+/* ---------- Footer ---------- */
+.yufan-panel-footer {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.yufan-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid rgba(158, 179, 166, 0.55);
+  background: #ffffff;
+  color: #3a4a44;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 160ms ease, transform 160ms ease,
+    border-color 160ms ease;
+}
+
+.yufan-btn-ghost:hover {
+  background: #f0f4ee;
+  border-color: rgba(158, 179, 166, 0.85);
+  transform: translateY(-1px);
+}
+
+.yufan-panel-provider {
+  font-size: 10.5px;
+  color: #96a6a0;
+  letter-spacing: 0.04em;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- Loader ---------- */
+.yufan-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+}
+.yufan-loader span {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #9eb3a6;
+  opacity: 0.35;
+  animation: yufanBounce 1s infinite ease-in-out;
+}
+.yufan-loader span:nth-child(2) { animation-delay: 0.15s; }
+.yufan-loader span:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes yufanBounce {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.35; }
+  40% { transform: translateY(-4px); opacity: 1; }
+}
+
+/* ---------- Page translation (inline <font>, inherits host styles) ---------- */
+/* 译文：紧跟在原文后面同行显示，中间加间距 */
+.yufan-page-translation {
+  margin-left: 6px;
+  padding-left: 6px;
+  border-left: 2px solid rgba(158, 179, 166, 0.4);
+  color: inherit;
+  font-size: 0.95em;
+  opacity: 0.85;
+  animation: yufanPageTransIn 280ms cubic-bezier(0.25, 1, 0.5, 1) both;
+}
+@keyframes yufanPageTransIn {
+  from { opacity: 0; }
+  to { opacity: 0.85; }
+}
+
+/* Page translation progress 样式由 content.js 的 addProgressStyles 动态注入，
+   此处不再重复定义，避免 top/pointer-events 等属性冲突 */
