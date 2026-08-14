@@ -753,6 +753,18 @@
           // 合并相邻的文本节点
           parent.normalize();
         });
+      // 恢复 title 属性原文
+      rootDoc
+        .querySelectorAll(`[${TITLE_TRANSLATED_ATTR}]`)
+        .forEach((el) => {
+          const original = el.getAttribute(TITLE_BACKUP_ATTR);
+          if (original != null) {
+            el.setAttribute("title", original);
+          }
+          el.removeAttribute(TITLE_BACKUP_ATTR);
+          el.removeAttribute(TITLE_TRANSLATED_TEXT_ATTR);
+          el.removeAttribute(TITLE_TRANSLATED_ATTR);
+        });
       // 递归同源 iframe
       const iframes = rootDoc.querySelectorAll("iframe");
       for (const f of iframes) {
@@ -799,6 +811,143 @@
     const translated = await translateText(text, target);
     if (translated && translated !== text) {
       insertTranslationAfter(node, translated);
+    }
+  };
+
+  // ---------- title 属性翻译 ----------
+  // 备份原文用的 data 属性名（恢复原文时读取）
+  const TITLE_BACKUP_ATTR = `data-${NAMESPACE}-title-original`;
+  // 备份译文用的 data 属性名（用于判断 title 是否被外部覆盖、需要重译）
+  const TITLE_TRANSLATED_TEXT_ATTR = `data-${NAMESPACE}-title-translated-text`;
+  // 标记已翻译 title 的 data 属性名（避免重复翻译、用于恢复时定位）
+  const TITLE_TRANSLATED_ATTR = `data-${NAMESPACE}-title-translated`;
+  // 原文与译文的分隔符（原生 tooltip 只能显示纯文本，用分隔符做对比展示）
+  const TITLE_SEPARATOR = " ｜ ";
+
+  // 判断一个元素的 title 属性是否应该被翻译
+  const shouldTranslateTitle = (el) => {
+    if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
+    if (!el.hasAttribute || !el.hasAttribute("title")) return false;
+    // 已经翻译过的跳过（双保险：标记或备份属性任一存在即视为已处理）
+    if (el.hasAttribute(TITLE_TRANSLATED_ATTR)) return false;
+    if (el.hasAttribute(TITLE_BACKUP_ATTR)) return false;
+    const text = el.getAttribute("title");
+    if (!text || !text.trim() || text.trim().length < 2) return false;
+    if (isOwnUI(el)) return false;
+    // 跳过特定标签内的元素（与文本节点规则一致）
+    let p = el;
+    while (p && p !== document.body) {
+      if (SKIP_TAGS.has(p.tagName)) return false;
+      if (p.isContentEditable) return false;
+      p = p.parentElement;
+    }
+    return true;
+  };
+
+  // 判断已翻译元素的 title 是否被外部覆盖、需要重新翻译
+  // 触发条件：元素已标记翻译，但当前 title 不等于我们设置的"原文 ｜ 译文"对比形式
+  // （说明页面自身代码重新设置了 title，需重新翻译新内容）
+  const needsRetranslateTitle = (el) => {
+    if (!el || el.nodeType !== Node.ELEMENT_NODE) return false;
+    if (!el.hasAttribute(TITLE_TRANSLATED_ATTR)) return false;
+    const original = el.getAttribute(TITLE_BACKUP_ATTR);
+    const translatedText = el.getAttribute(TITLE_TRANSLATED_TEXT_ATTR);
+    if (original == null || translatedText == null) return false;
+    const current = el.getAttribute("title");
+    if (current == null) return false;
+    // 当前 title 仍是我们的对比形式则无需重译
+    return current !== original + TITLE_SEPARATOR + translatedText;
+  };
+
+  // 翻译单个元素的 title 属性
+  // 与正文翻译效果保持一致：保留原文，在原文后方追加译文对比显示。
+  // 由于原生 title tooltip 只能显示纯文本，采用 "原文 ｜ 译文" 的拼接形式，
+  // 鼠标悬停时即可同时看到原文与译文对比。
+  // skipHidden=true 时跳过当前不可见元素（由 observer 后续兜底）
+  // retranslate=true 时表示元素已被外部覆盖需重新翻译（清除旧标记后重走流程）
+  const translateOneTitle = async (el, target, skipHidden = false, retranslate = false) => {
+    if (retranslate) {
+      // 外部覆盖场景：清除旧标记，按新 title 内容重新翻译
+      if (!needsRetranslateTitle(el)) return;
+      if (skipHidden && !isElementVisible(el)) return;
+      el.removeAttribute(TITLE_TRANSLATED_ATTR);
+      el.removeAttribute(TITLE_BACKUP_ATTR);
+      el.removeAttribute(TITLE_TRANSLATED_TEXT_ATTR);
+    } else {
+      if (!shouldTranslateTitle(el)) return;
+      if (skipHidden && !isElementVisible(el)) return;
+    }
+    const original = el.getAttribute("title");
+    if (!original) return;
+    // 标记为已翻译（先标记，避免并发重复处理）
+    el.setAttribute(TITLE_TRANSLATED_ATTR, "true");
+    const translated = await translateText(original, target);
+    if (translated && translated !== original) {
+      // 备份原文与译文，写入"原文 ｜ 译文"对比形式
+      el.setAttribute(TITLE_BACKUP_ATTR, original);
+      el.setAttribute(TITLE_TRANSLATED_TEXT_ATTR, translated);
+      el.setAttribute("title", original + TITLE_SEPARATOR + translated);
+    } else {
+      // 未翻译成功，移除标记，下次可重试
+      el.removeAttribute(TITLE_TRANSLATED_ATTR);
+    }
+  };
+
+  // 收集页面内所有需要翻译 title 属性的元素（含同源 iframe 兜底）
+  const collectAllTitleElements = () => {
+    const elements = [];
+
+    const walkDoc = (rootDoc) => {
+      if (!rootDoc || !rootDoc.body) return;
+      const all = rootDoc.querySelectorAll("[title]");
+      for (const el of all) {
+        if (!shouldTranslateTitle(el)) continue;
+        elements.push(el);
+      }
+      // 递归同源 iframe
+      const iframes = rootDoc.querySelectorAll("iframe");
+      for (const f of iframes) {
+        let iframeDoc = null;
+        try {
+          iframeDoc = f.contentDocument;
+        } catch (_) {
+          iframeDoc = null;
+        }
+        if (!iframeDoc) continue;
+        try {
+          if (
+            iframeDoc.defaultView &&
+            iframeDoc.defaultView.__yufanTranslateLoaded
+          ) {
+            continue;
+          }
+        } catch (_) {
+          // 跨源访问 defaultView 属性可能抛错，按"未加载"处理
+        }
+        walkDoc(iframeDoc);
+      }
+    };
+
+    walkDoc(document);
+    return elements;
+  };
+
+  // 批量翻译 title 属性
+  // retranslate=true 时处理已被外部覆盖、需要重新翻译的元素
+  const translateTitleBatch = async (elements, target, concurrency = 4, skipHidden = false, retranslate = false) => {
+    if (elements.length === 0) return;
+    const batchSize = 40;
+    for (let i = 0; i < elements.length; i += batchSize) {
+      const batch = elements.slice(i, i + batchSize);
+      const workers = Array.from(
+        { length: Math.min(concurrency, batch.length) },
+        async () => {
+          for (const el of batch) {
+            await translateOneTitle(el, target, skipHidden, retranslate);
+          }
+        }
+      );
+      await Promise.all(workers);
     }
   };
 
@@ -930,8 +1079,17 @@
   // 避免对隐藏 DOM 做无意义处理导致 DOM 闪烁、loading 频闪
   const translateAllVisible = async (target) => {
     const textNodes = collectAllTextNodes();
-    if (textNodes.length === 0) return;
-    await translateBatch(textNodes, target, 5, true);
+    const titleElements = collectAllTitleElements();
+    if (textNodes.length === 0 && titleElements.length === 0) return;
+    // 并发翻译文本节点与 title 属性，互不阻塞
+    const tasks = [];
+    if (textNodes.length > 0) {
+      tasks.push(translateBatch(textNodes, target, 5, true));
+    }
+    if (titleElements.length > 0) {
+      tasks.push(translateTitleBatch(titleElements, target, 4, true));
+    }
+    await Promise.all(tasks);
   };
 
   // 执行页面翻译
@@ -952,6 +1110,7 @@
       (entries) => {
         if (!pageTranslated) return;
         const newNodes = [];
+        const newTitles = [];
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
           const el = entry.target;
@@ -971,16 +1130,27 @@
           while ((n = walker.nextNode())) {
             if (!translatedNodes.has(n)) newNodes.push(n);
           }
-        }
-        if (newNodes.length > 0) {
-          // 节流处理，避免频繁触发（用独立变量，不挂到 observer 实例上）
-          if (!intersectionThrottleTimer) {
-            intersectionThrottleTimer = setTimeout(() => {
-              intersectionThrottleTimer = null;
-              // 此时节点已可见，skipHidden=false 直接翻译
-              translateBatch(newNodes, pageTranslationTarget, 3, false);
-            }, 200);
+          // 收集元素自身及子树中需要翻译的 title 属性
+          if (shouldTranslateTitle(el)) newTitles.push(el);
+          const titled = el.querySelectorAll("[title]");
+          for (const t of titled) {
+            if (shouldTranslateTitle(t)) newTitles.push(t);
           }
+        }
+        // 节流处理，避免频繁触发（用独立变量，不挂到 observer 实例上）
+        if ((newNodes.length > 0 || newTitles.length > 0) && !intersectionThrottleTimer) {
+          intersectionThrottleTimer = setTimeout(() => {
+            intersectionThrottleTimer = null;
+            // 此时节点已可见，skipHidden=false 直接翻译
+            const tasks = [];
+            if (newNodes.length > 0) {
+              tasks.push(translateBatch(newNodes, pageTranslationTarget, 3, false));
+            }
+            if (newTitles.length > 0) {
+              tasks.push(translateTitleBatch(newTitles, pageTranslationTarget, 3, false));
+            }
+            Promise.all(tasks);
+          }, 200);
         }
       },
       { rootMargin: "600px" }
@@ -994,10 +1164,16 @@
 
   // 监听 DOM 变化（新加载的内容，极速版）
   // 新增节点：可见的立即翻译，不可见的加入 IntersectionObserver 兜底
+  // 属性变化：监听 title 属性被动态设置/修改的场景
   const setupMutationObserver = () => {
     pageMutationObserver = new MutationObserver((mutations) => {
       if (!pageTranslated) return;
+      // 暂存本轮需要翻译 title 的元素（去重）
+      const titlePending = new Set();
+      // 暂存本轮需要重译 title 的元素（已被外部覆盖）
+      const titleRetranslate = new Set();
       for (const m of mutations) {
+        // 处理新增节点
         for (const node of m.addedNodes) {
           if (node.nodeType !== Node.ELEMENT_NODE) continue;
           // 跳过我们自己的 UI
@@ -1029,10 +1205,65 @@
           if (visibleNodes.length > 0) {
             translateBatch(visibleNodes, pageTranslationTarget, 4, false);
           }
+          // 收集新元素自身及子树中需要翻译的 title 属性
+          if (shouldTranslateTitle(node)) titlePending.add(node);
+          const titled = node.querySelectorAll ? node.querySelectorAll("[title]") : [];
+          for (const t of titled) {
+            if (shouldTranslateTitle(t)) titlePending.add(t);
+          }
           // 把新元素加入 IntersectionObserver 观察，隐藏子树显示后兜底翻译
           if (pageObserver && node.nodeType === Node.ELEMENT_NODE) {
             pageObserver.observe(node);
           }
+        }
+        // 处理 title 属性变化（动态设置/修改 title 的场景）
+        if (m.type === "attributes" && m.attributeName === "title") {
+          const el = m.target;
+          if (!el || el.nodeType !== Node.ELEMENT_NODE) continue;
+          if (shouldTranslateTitle(el)) {
+            // 未翻译过的元素：加入首次翻译队列
+            titlePending.add(el);
+          } else if (needsRetranslateTitle(el)) {
+            // 已翻译但被外部覆盖：加入重译队列
+            titleRetranslate.add(el);
+          }
+        }
+      }
+      // 立即翻译可见元素的 title（弹窗/下拉打开时的关键路径）
+      if (titlePending.size > 0) {
+        const visibleTitles = [];
+        const hiddenTitles = [];
+        for (const el of titlePending) {
+          if (isElementVisible(el)) {
+            visibleTitles.push(el);
+          } else {
+            hiddenTitles.push(el);
+          }
+        }
+        if (visibleTitles.length > 0) {
+          translateTitleBatch(visibleTitles, pageTranslationTarget, 4, false);
+        }
+        // 隐藏元素的 title 交给 IntersectionObserver 兜底（需先加入观察）
+        if (pageObserver && hiddenTitles.length > 0) {
+          hiddenTitles.forEach((el) => pageObserver.observe(el));
+        }
+      }
+      // 处理被外部覆盖、需要重译的 title
+      if (titleRetranslate.size > 0) {
+        const visibleRetranslate = [];
+        const hiddenRetranslate = [];
+        for (const el of titleRetranslate) {
+          if (isElementVisible(el)) {
+            visibleRetranslate.push(el);
+          } else {
+            hiddenRetranslate.push(el);
+          }
+        }
+        if (visibleRetranslate.length > 0) {
+          translateTitleBatch(visibleRetranslate, pageTranslationTarget, 4, false, true);
+        }
+        if (pageObserver && hiddenRetranslate.length > 0) {
+          hiddenRetranslate.forEach((el) => pageObserver.observe(el));
         }
       }
       // 隐藏节点节流批处理（用独立变量，不挂到 observer 实例上）
@@ -1049,6 +1280,8 @@
     pageMutationObserver.observe(document.body, {
       childList: true,
       subtree: true,
+      attributes: true,
+      attributeFilter: ["title"],
     });
   };
 
