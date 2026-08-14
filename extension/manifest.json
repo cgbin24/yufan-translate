@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "语翻 Yufan Translate",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "简约优雅的划词翻译扩展 — 划词即译，整页翻译，动态翻译，支持多语言。",
   "homepage_url": "https://github.com/cgbin24/yufan-translate",
   "author": "cgbin24",
