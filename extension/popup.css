@@ -24,14 +24,18 @@ body {
   font-family: "Noto Sans SC", -apple-system, BlinkMacSystemFont,
     "PingFang SC", "Microsoft YaHei", sans-serif;
   font-size: 14px;
-  width: 400px;
-  height: 520px;
-  overflow: hidden;
+  width: 420px;
+  /* popup 自适应高度：默认 600px 装满普通翻译 + 词典头 + 8 条定义 + 2 条预览例句；
+     需要看完整 9 条例句时点"展开"按钮。超长时 .output 内滚动 */
+  min-height: 600px;
+  max-height: 92vh;
+  overflow-x: hidden;
 }
 
 .app {
-  width: 400px;
-  height: 520px;
+  width: 420px;
+  min-height: 600px;
+  max-height: 92vh;
   padding: 18px 18px 14px;
   display: flex;
   flex-direction: column;
@@ -78,7 +82,7 @@ body {
   color: var(--text);
   line-height: 1;
 }
-.header-link {
+.header-info, .header-btn {
   text-decoration: none;
   color: var(--text-2);
   font-size: 11px;
@@ -89,10 +93,38 @@ body {
   transition: background-color 180ms ease, color 180ms ease,
     border-color 180ms ease;
 }
-.header-link:hover {
+
+/* 图标按钮（刷新、设置）：严格居中对齐 */
+.header-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.header-btn svg {
+  display: block;
+  flex-shrink: 0;
+}
+.header-info:hover {
   color: var(--text);
   border-color: rgba(158, 179, 166, 0.55);
   background: rgba(158, 179, 166, 0.1);
+}
+
+/* "重载翻译服务" 按钮：黄色描边，提示"如果翻译没生效，点这里" */
+#reloadServiceBtn {
+  margin-right: 6px;
+  border-color: rgba(218, 165, 32, 0.5);
+  color: #8b6914;
+}
+#reloadServiceBtn:hover {
+  background: rgba(218, 165, 32, 0.12);
+  color: #6b4f0a;
+  border-color: rgba(218, 165, 32, 0.8);
 }
 
 /* -------- Language bar -------- */
@@ -371,6 +403,31 @@ textarea:focus {
   color: var(--text-2);
   text-transform: uppercase;
 }
+/* 词典模式：标题位换成 "音标 + 单词"，去掉 "翻译结果" 文字本身 */
+.output-label.is-dict {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+.output-label-phonetic {
+  color: var(--text-2);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 12px;
+  font-family: "Times New Roman", "Cambria", Georgia, serif;
+}
+.output-label-word {
+  color: var(--text);
+}
+/* 词典模式下的音频按钮：放在标题行右侧，紧挨"复制" */
+.dict-audio-inline {
+  margin-right: 4px;
+}
 .copy-btn {
   display: inline-flex;
   align-items: center;
@@ -394,12 +451,33 @@ textarea:focus {
 .output {
   flex: 1;
   min-height: 0;
+  /* 词典释义可能很长（多词性 + 10 条例句），让 .output 自己滚动；
+     但优先填满可用空间（去掉 50vh 硬限制，改用 flex: 1），需要时滚动 */
   overflow-y: auto;
   padding: 4px 0;
   font-size: 14.5px;
   line-height: 1.65;
-  white-space: pre-wrap;
   word-break: break-word;
+  /* 细滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(158, 179, 166, 0.45) transparent;
+}
+.output::-webkit-scrollbar {
+  width: 6px;
+}
+.output::-webkit-scrollbar-track {
+  background: transparent;
+}
+.output::-webkit-scrollbar-thumb {
+  background: rgba(158, 179, 166, 0.35);
+  border-radius: 999px;
+}
+.output::-webkit-scrollbar-thumb:hover {
+  background: rgba(158, 179, 166, 0.65);
+}
+/* 纯文本模式才加 pre-wrap，词典模式不加（避免模板字面量缩进被当空白渲染） */
+.output.output-text {
+  white-space: pre-wrap;
 }
 .output .placeholder {
   display: block;
@@ -471,3 +549,317 @@ textarea:focus {
   border-radius: 999px;
 }
 ::-webkit-scrollbar-track { background: transparent; }
+
+/* 配额耗尽警告横幅：始终显示在 popup 底部，配额恢复后自动隐藏 */
+.quota-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  background: linear-gradient(180deg, #fff4ec 0%, #fdebd8 100%);
+  border: 1px solid #f0c08a;
+  border-radius: 10px;
+  color: #8a4a1f;
+  font-size: 12px;
+  line-height: 1.55;
+  margin: 6px 14px 0;
+  cursor: pointer;
+  transition: filter 140ms ease;
+}
+.quota-banner:hover { filter: brightness(0.98); }
+.quota-banner[hidden] {
+  display: none;
+}
+.quota-banner-icon {
+  font-size: 14px;
+  line-height: 1.4;
+  flex-shrink: 0;
+}
+.quota-banner-text {
+  flex: 1;
+}
+.quota-banner-text strong {
+  color: #6b3812;
+  font-weight: 600;
+}
+.quota-banner-text code {
+  background: rgba(176, 74, 62, 0.12);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  color: #8a4a1f;
+}
+
+/* ---------- Dictionary result (popup) ---------- */
+.dict-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed rgba(158, 179, 166, 0.5);
+}
+.dict-head[hidden] { display: none; }
+
+.dict-word {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2622;
+  letter-spacing: 0.2px;
+}
+.dict-phonetic {
+  font-size: 11.5px;
+  color: #6a7670;
+  font-family: "Lucida Sans Unicode", "Arial Unicode MS", "Charis SIL", serif;
+  font-style: italic;
+}
+.dict-phonetic:empty { display: none; }
+
+.dict-audio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid rgba(158, 179, 166, 0.55);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #4a6054;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.dict-audio:hover { background: #eef3ee; color: #2a312d; }
+.dict-audio[hidden] { display: none; }
+.dict-audio:disabled { cursor: wait; opacity: 0.7; }
+.dict-audio[data-state="loading"] svg { animation: yufan-audio-spin 0.9s linear infinite; }
+.dict-audio[data-state="playing"] { background: #eef3ee; color: #2a312d; border-color: #9eb3a6; }
+.dict-audio[data-state="error"] { background: #fdecea; color: #b04a3a; border-color: #d8a097; }
+@keyframes yufan-audio-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.dict-pos-block { margin: 0 0 8px; }
+.dict-pos-block:last-child { margin-bottom: 0; }
+
+/* 词典翻译未生效提示（dict mode + 目标=繁中 + translatedMeanings 缺失） */
+.dict-translate-hint {
+  margin: 0 0 10px;
+  padding: 8px 10px;
+  background: #fff8e6;
+  border: 1px solid #f0d488;
+  border-radius: 6px;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: #6b5418;
+}
+.dict-translate-hint strong {
+  display: block;
+  font-size: 12px;
+  color: #8a6611;
+  margin-bottom: 2px;
+}
+.dict-translate-hint code {
+  background: rgba(0, 0, 0, 0.06);
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.dict-pos {
+  display: inline-block;
+  padding: 1px 7px;
+  margin: 0 0 4px;
+  background: rgba(158, 179, 166, 0.22);
+  color: #3f5b4a;
+  font-size: 10.5px;
+  font-style: italic;
+  font-weight: 500;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+.dict-defs { list-style: none; margin: 0; padding: 0; }
+.dict-def {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #2a312d;
+}
+.dict-def-num {
+  flex: 0 0 auto;
+  min-width: 16px;
+  color: #9eb3a6;
+  font-variant-numeric: tabular-nums;
+}
+.dict-def-body { flex: 1 1 auto; min-width: 0; word-break: break-word; }
+.dict-example {
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: #6a7670;
+  font-style: italic;
+  line-height: 1.5;
+}
+.dict-ex-orig {
+  color: #4a6054;
+  font-style: italic;
+}
+.dict-ex-trans {
+  color: #6a7670;
+  font-style: normal;
+  margin-top: 1px;
+}
+.dict-ex-trans::before {
+  content: "↳ ";
+  color: #9eb3a6;
+  font-style: normal;
+}
+.dict-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.dict-chip-label {
+  font-size: 10px;
+  color: #9eb3a6;
+  letter-spacing: 0.4px;
+  margin-right: 2px;
+}
+.dict-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 10.5px;
+  color: #3f5b4a;
+  background: #f0f4f1;
+  border: 1px solid rgba(158, 179, 166, 0.45);
+  border-radius: 999px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+.output-error {
+  color: #b04a3e;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+/* 必应词典 10 条例句块 */
+.dict-examples-block {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+.dict-examples-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #5b6b62;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+.dict-examples-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.dict-ex-item {
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+.dict-ex-main {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: #1f2a24;
+}
+.dict-ex-tr {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5b6b62;
+  margin-top: 2px;
+  padding-left: 8px;
+  border-left: 2px solid rgba(158, 179, 166, 0.4);
+}
+/* "展开剩余 N 条例句" 折叠器 */
+.dict-examples-more {
+  margin-top: 4px;
+}
+.dict-examples-more > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #5b6b62;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px dashed rgba(158, 179, 166, 0.45);
+  user-select: none;
+  text-align: center;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.dict-examples-more > summary::-webkit-details-marker { display: none; }
+.dict-examples-more > summary:hover {
+  color: #1f2a24;
+  background: rgba(158, 179, 166, 0.12);
+}
+.dict-examples-more[open] > summary {
+  margin-bottom: 6px;
+}
+
+/* "展开剩余 N 条例句" 按钮（替代旧 <details>/<summary>，与插件整体风格一致） */
+.dict-examples-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #5b6b62;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px dashed rgba(158, 179, 166, 0.5);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  letter-spacing: 0.02em;
+  transition: background-color 160ms ease, color 160ms ease,
+    border-color 160ms ease, box-shadow 160ms ease;
+}
+.dict-examples-toggle:hover {
+  color: #1f2a24;
+  background: rgba(158, 179, 166, 0.14);
+  border-color: rgba(158, 179, 166, 0.7);
+}
+.dict-examples-toggle:active {
+  background: rgba(158, 179, 166, 0.2);
+}
+.dict-examples-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(158, 179, 166, 0.35);
+}
+.dict-examples-toggle-caret {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+.dict-examples-toggle[aria-expanded="true"] .dict-examples-toggle-caret {
+  transform: rotate(180deg);
+}
+.dict-examples-rest {
+  margin-top: 6px;
+  animation: dict-examples-fade-in 180ms ease;
+}
+@keyframes dict-examples-fade-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

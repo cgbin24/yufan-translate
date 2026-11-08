@@ -1,7 +1,8 @@
 {
   "manifest_version": 3,
   "name": "语翻 Yufan Translate",
-  "version": "1.0.1",
+  "version": "2.3.7",
+  "minimum_chrome_version": "109",
   "description": "简约优雅的划词翻译扩展 — 划词即译，整页翻译，动态翻译，支持多语言。",
   "homepage_url": "https://github.com/cgbin24/yufan-translate",
   "author": "cgbin24",
@@ -21,8 +22,13 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage", "activeTab", "contextMenus", "scripting", "webNavigation"],
-  "host_permissions": ["<all_urls>"],
+  "permissions": ["storage", "activeTab", "contextMenus", "scripting", "webNavigation", "unlimitedStorage"],
+  "host_permissions": [
+    "<all_urls>",
+    "https://api.mymemory.translated.net/*",
+    "https://api.dictionaryapi.dev/*",
+    "https://cn.bing.com/*"
+  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -35,9 +41,13 @@
   "background": {
     "service_worker": "background.js"
   },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
   "web_accessible_resources": [
     {
-      "resources": ["icons/*.png", "icons/*.svg"],
+      "resources": ["icons/*.png", "icons/*.svg", "content.css"],
       "matches": ["<all_urls>"]
     }
   ]

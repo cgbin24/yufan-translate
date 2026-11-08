@@ -26,3 +26,15 @@ yarn-error.log*
 
 *.zip
 */*.zip
+
+# local tooling / agent state (not source)
+.agents/
+.workbuddy/
+
+# dead-code backup containing a Supabase project reference — keep local only
+extension/background-bac.js
+
+# temporary verification scripts (not part of the project)
+yufan-clicks.js
+yufan-clicks1.js
+yufan-disp.js

@@ -25,19 +25,16 @@
   font-family: inherit;
 }
 
-/* ---------- Pill button ---------- */
+/* ---------- Pill button (segmented: translate | search | open) ---------- */
 .yufan-pill {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px 7px 10px;
+  align-items: stretch;
   background: #ffffff;
   color: #2a312d;
   border-radius: 999px;
   border: 1px solid rgba(158, 179, 166, 0.55);
   box-shadow: 0 8px 26px rgba(74, 96, 84, 0.22),
     0 1px 2px rgba(0, 0, 0, 0.06);
-  cursor: pointer;
   font-size: 12px;
   line-height: 1;
   user-select: none;
@@ -47,6 +44,7 @@
     transform 260ms cubic-bezier(0.25, 1, 0.5, 1),
     box-shadow 180ms ease,
     background-color 180ms ease;
+  overflow: hidden;
 }
 
 .yufan-pill-in {
@@ -55,17 +53,52 @@
 }
 
 .yufan-pill:hover {
-  background: #fbfaf5;
   box-shadow: 0 12px 32px rgba(74, 96, 84, 0.26),
     0 2px 4px rgba(0, 0, 0, 0.06);
   transform: translateY(-1px);
 }
 
-.yufan-pill svg {
-  color: #6d8a7b;
+.yufan-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 10px; /* 无垂直内边距，按钮高度自然等于胶囊内容区高度 */
+  min-height: 26px; /* 与原始单按钮胶囊高度保持一致 */
+  background: transparent;
+  border: none;
+  color: #2a312d;
+  font-family: inherit;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+  white-space: nowrap;
 }
 
-.yufan-pill span {
+/* 按钮之间只留一条极淡的分隔线 */
+.yufan-pill-btn + .yufan-pill-btn {
+  border-left: 1px solid rgba(158, 179, 166, 0.12);
+}
+
+.yufan-pill-btn:hover {
+  background: rgba(158, 179, 166, 0.1);
+}
+
+.yufan-pill-btn:active {
+  background: rgba(158, 179, 166, 0.18);
+}
+
+.yufan-pill-btn svg {
+  color: #6d8a7b;
+  flex-shrink: 0;
+}
+
+.yufan-pill-btn img {
+  flex-shrink: 0;
+}
+
+.yufan-pill-btn span {
   font-weight: 500;
   letter-spacing: 0.02em;
 }
@@ -74,6 +107,10 @@
 .yufan-panel {
   width: 300px;
   max-width: 92vw;
+  /* 面板高度上限：不超过可视区高度 50%，超长结果在内部滚动而不是把页面挤变形 */
+  max-height: 50vh;
+  display: flex;
+  flex-direction: column;
   padding: 12px 14px 10px;
   background: #ffffff;
   -webkit-backdrop-filter: blur(8px);
@@ -173,6 +210,9 @@
   background: #f4f5f0;
   word-break: break-word;
   white-space: pre-wrap;
+  /* flex column 里源 pill 永远按内容自然高度展示，
+     不被 result 的 flex:1 1 auto 挤压缩小 */
+  flex: 0 0 auto;
 }
 
 /* ---------- Target language selector (custom dropdown) ---------- */
@@ -321,10 +361,19 @@
   border: 1px solid rgba(158, 179, 166, 0.3);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9),
     0 2px 8px rgba(74, 96, 84, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
-  white-space: pre-wrap;
   word-break: break-word;
   font-weight: 500;
   letter-spacing: 0.01em;
+  /* 面板总高 50vh：head/select/source/footer 都是 flex item，result 拿走剩余空间 */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+/* 纯文本模式才需要 pre-wrap（保留 MyMemory 返回的换行），词典模式不能加 pre-wrap
+   否则模板字面量里的缩进/换行会被当可见空白渲染，把例句挤成大字空行 */
+.yufan-panel-result.yufan-panel-result-text {
+  white-space: pre-wrap;
+  overflow-y: auto;
 }
 
 .yufan-error {
@@ -414,5 +463,296 @@
   to { opacity: 0.85; }
 }
 
+/* 紧凑型标签（链接、按钮、菜单项、表头…）宽度是固定的，"原文 + 译文"并列
+   会被 nowrap / overflow:hidden 裁掉，用户看到的就是"链接没翻译"。
+   这类元素改为只显示译文（与 Google 整页翻译一致）：原文用"视觉隐藏"保留在
+   DOM 里——既不影响布局，又保证取消翻译时能原样还原，且节点仍算可见
+   （display:none 会让可见性判定失败，导致后续动态更新不再重译）。 */
+.yufan-tight-label > .yufan-page-original,
+a > .yufan-page-original,
+button > .yufan-page-original,
+label > .yufan-page-original,
+summary > .yufan-page-original,
+legend > .yufan-page-original,
+option > .yufan-page-original,
+optgroup > .yufan-page-original,
+th > .yufan-page-original,
+dt > .yufan-page-original,
+nav .yufan-page-original {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  clip: rect(0 0 0 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+}
+/* 只显示译文时不必再加分隔线与间距 */
+.yufan-tight-label > .yufan-page-translation,
+a > .yufan-page-translation,
+button > .yufan-page-translation,
+label > .yufan-page-translation,
+summary > .yufan-page-translation,
+legend > .yufan-page-translation,
+option > .yufan-page-translation,
+optgroup > .yufan-page-translation,
+th > .yufan-page-translation,
+dt > .yufan-page-translation,
+nav .yufan-page-translation {
+  margin-left: 0;
+  padding-left: 0;
+  border-left: 0;
+}
+
 /* Page translation progress 样式由 content.js 的 addProgressStyles 动态注入，
    此处不再重复定义，避免 top/pointer-events 等属性冲突 */
+
+/* ---------- Dictionary result (单词多词性多释义) ---------- */
+.yufan-dict-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -4px 0 6px;
+}
+.yufan-dict-head[hidden] { display: none; }
+
+.yufan-dict-phonetic {
+  font-size: 12px;
+  color: #6a7670;
+  font-family: "Lucida Sans Unicode", "Arial Unicode MS", "Charis SIL", serif;
+  font-style: italic;
+}
+.yufan-dict-phonetic:empty { display: none; }
+
+.yufan-dict-audio {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin-left: auto;
+  padding: 0;
+  border: 1px solid rgba(158, 179, 166, 0.55);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #4a6054;
+  cursor: pointer;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+.yufan-dict-audio:hover { background: #eef3ee; color: #2a312d; }
+.yufan-dict-audio[hidden] { display: none; }
+.yufan-dict-audio:disabled { cursor: wait; opacity: 0.7; }
+.yufan-dict-audio[data-state="loading"] svg { animation: yufan-audio-spin 0.9s linear infinite; }
+.yufan-dict-audio[data-state="playing"] { background: #eef3ee; color: #2a312d; border-color: #9eb3a6; }
+.yufan-dict-audio[data-state="error"] { background: #fdecea; color: #b04a3a; border-color: #d8a097; }
+@keyframes yufan-audio-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.yufan-dict-pos-block {
+  margin: 0 0 8px;
+}
+.yufan-dict-pos-block:last-child { margin-bottom: 0; }
+
+.yufan-dict-pos {
+  display: inline-block;
+  padding: 1px 7px;
+  margin: 0 0 4px;
+  background: rgba(158, 179, 166, 0.22);
+  color: #3f5b4a;
+  font-size: 11px;
+  font-style: italic;
+  font-weight: 500;
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+.yufan-dict-defs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.yufan-dict-def {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: #2a312d;
+}
+.yufan-dict-def-num {
+  flex: 0 0 auto;
+  min-width: 16px;
+  color: #9eb3a6;
+  font-variant-numeric: tabular-nums;
+}
+.yufan-dict-def-body { flex: 1 1 auto; min-width: 0; word-break: break-word; }
+
+.yufan-dict-example {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6a7670;
+  font-style: italic;
+  line-height: 1.5;
+}
+/* 双语例句：原文在上，译文在下 */
+.yufan-dict-ex-orig {
+  color: #4a6054;
+  font-style: italic;
+}
+.yufan-dict-ex-trans {
+  color: #6a7670;
+  font-style: normal;
+  margin-top: 1px;
+}
+.yufan-dict-ex-trans::before {
+  content: "↳ ";
+  color: #9eb3a6;
+  font-style: normal;
+}
+
+.yufan-dict-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.yufan-dict-chip-label {
+  font-size: 10.5px;
+  color: #9eb3a6;
+  letter-spacing: 0.4px;
+  margin-right: 2px;
+}
+.yufan-dict-chip {
+  display: inline-block;
+  padding: 1px 6px;
+  font-size: 11px;
+  color: #3f5b4a;
+  background: #f0f4f1;
+  border: 1px solid rgba(158, 179, 166, 0.45);
+  border-radius: 999px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* 必应词典 10 条例句块 */
+.yufan-dict-examples-block {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.1);
+}
+.yufan-dict-examples-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #5b6b62;
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+}
+.yufan-dict-examples-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.yufan-dict-ex-item {
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+.yufan-dict-ex-en {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: #1f2a24;
+  font-style: italic;
+}
+.yufan-dict-ex-cn {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #5b6b62;
+  margin-top: 2px;
+}
+/* "展开剩余 N 条例句" 折叠器 */
+.yufan-dict-examples-more {
+  margin-top: 4px;
+}
+.yufan-dict-examples-more > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: #5b6b62;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px dashed rgba(158, 179, 166, 0.45);
+  user-select: none;
+  text-align: center;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+.yufan-dict-examples-more > summary::-webkit-details-marker { display: none; }
+.yufan-dict-examples-more > summary:hover {
+  color: #1f2a24;
+  background: rgba(158, 179, 166, 0.12);
+}
+.yufan-dict-examples-more[open] > summary {
+  margin-bottom: 6px;
+}
+
+/* "展开剩余 N 条例句" 按钮（替代旧 <details>/<summary>，与插件整体风格一致） */
+.yufan-dict-examples-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  color: #5b6b62;
+  background: rgba(255, 255, 255, 0.55);
+  border: 1px dashed rgba(158, 179, 166, 0.5);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  letter-spacing: 0.02em;
+  transition: background-color 160ms ease, color 160ms ease,
+    border-color 160ms ease, box-shadow 160ms ease;
+}
+.yufan-dict-examples-toggle:hover {
+  color: #1f2a24;
+  background: rgba(158, 179, 166, 0.14);
+  border-color: rgba(158, 179, 166, 0.7);
+}
+.yufan-dict-examples-toggle:active {
+  background: rgba(158, 179, 166, 0.2);
+}
+.yufan-dict-examples-toggle:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(158, 179, 166, 0.35);
+}
+.yufan-dict-examples-toggle-caret {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  transition: transform 200ms ease;
+}
+.yufan-dict-examples-toggle[aria-expanded="true"] .yufan-dict-examples-toggle-caret {
+  transform: rotate(180deg);
+}
+.yufan-dict-examples-rest {
+  margin-top: 6px;
+  animation: yufan-dict-examples-fade-in 180ms ease;
+}
+@keyframes yufan-dict-examples-fade-in {
+  from { opacity: 0; transform: translateY(-2px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

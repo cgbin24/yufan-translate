@@ -23,13 +23,35 @@
             <h1 class="brand-title">语翻</h1>
           </div>
         </div>
-        <a
-          href="#"
-          class="header-link"
-          data-testid="header-info"
-          title="划词即译"
-          >划词即译</a
-        >
+        <div>
+          <!-- 重新加载后台服务（MV3 service worker 不会自动 reload，
+               这里给用户一个"点一下就能重启"按钮，避免每次去 chrome://extensions 找 🔄） -->
+          <button
+            class="header-btn"
+            id="reloadServiceBtn"
+            type="button"
+            data-testid="reload-service"
+            title="重新加载翻译服务（如果释义没翻译成目标语言，点击此按钮）"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/></svg>
+          </button>
+          <!-- 设置入口：跳转到独立设置页面 -->
+          <button
+            class="header-btn"
+            id="settingsToggle"
+            type="button"
+            data-testid="settings-toggle"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+          <a
+            href="#"
+            class="header-info"
+            data-testid="header-info"
+            title="划词即译"
+            >划词即译</a
+          >
+        </div>
       </header>
 
       <section class="lang-bar">
@@ -78,7 +100,16 @@
 
       <section class="output-block" data-testid="output-block">
         <div class="output-head">
-          <span class="output-label">翻译结果</span>
+          <span class="output-label" id="outputLabel">翻译结果</span>
+          <button
+            class="dict-audio dict-audio-inline"
+            id="dictAudio"
+            type="button"
+            aria-label="发音"
+            hidden
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+          </button>
           <button
             class="copy-btn"
             id="copy"
@@ -88,6 +119,10 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h10"/></svg>
             <span id="copyLabel">复制</span>
           </button>
+        </div>
+        <div class="dict-head" id="dictHead" data-testid="dict-head" hidden>
+          <span class="dict-word" id="dictWord"></span>
+          <span class="dict-phonetic" id="dictPhonetic"></span>
         </div>
         <div class="output" id="output" data-testid="output-text"><span class="placeholder">译文将在此显示</span></div>
         <div class="output-foot">
@@ -102,7 +137,15 @@
           <a href="https://github.com/cgbin24/yufan-translate" target="_blank" rel="noopener" class="footer-link">GitHub</a>
         </div>
       </footer>
+
+      <!-- 配额横幅（始终可见，超额时显示） -->
+      <div class="quota-banner" id="quotaBanner" data-testid="quota-banner" hidden>
+        <span class="quota-banner-icon" aria-hidden="true">⚠</span>
+        <span class="quota-banner-text" id="quotaBannerText"></span>
+      </div>
+
     </div>
+
     <script src="popup.js"></script>
   </body>
 </html>
