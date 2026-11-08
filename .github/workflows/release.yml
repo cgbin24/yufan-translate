@@ -1,0 +1,56 @@
+name: Release
+
+# 发布流程：推送 v* 标签（或在 Actions 页手动 dispatch）即触发，
+# 由 GitHub Actions 自动构建扩展并创建 GitHub Release，把 extension.zip 作为附件上传。
+# 无需任何个人 token —— 使用内置 GITHUB_TOKEN 即可创建 Release。
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要发布的标签，例如 v2.3.8（留空则使用触发分支）"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Ensure zip/unzip available
+        run: |
+          if ! command -v zip || ! command -v unzip; then
+            sudo apt-get update && sudo apt-get install -y zip unzip
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test and pack
+        # npm test = pack + logic/smoke/dynamic 全测试 + pack:check，
+        # 测试不绿则构建失败，不会产出/发布错误版本。
+        run: npm test
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: extension.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
