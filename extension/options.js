@@ -20,6 +20,15 @@
   // 新版本加到数组最前；每条 {version, date, features}，features 以列表形式展现。
   const CHANGELOG = [
     {
+      version: "2.3.8",
+      date: "2026-11-08",
+      features: [
+        "修复：划词胶囊完全无样式（裸奔/纵向堆叠）——content.css 未列入 web_accessible_resources，且误启用 use_dynamic_url 封死静态资源 URL，现恢复胶囊外观与 logo 加载",
+        "修复：点击胶囊按钮（翻译/复制/搜索/打开）无反应——Shadow DOM 内事件在 document 层被重定位到宿主，旧判定 closest 永远匹配不到内部按钮而误删 UI；现改用 composedPath 还原真实路径判定",
+        "新增：options 设置页、离线测试套件（logic/smoke/dynamic 共 337 项）与打包脚本",
+      ],
+    },
+    {
       version: "2.3.7",
       date: "2026-09-09",
       features: [

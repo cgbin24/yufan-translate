@@ -2246,7 +2246,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     sendResponse({
       ok: true,
       protocol: MSG_PROTOCOL,
-      build: "v2026-09-09.6",
+      build: "v2026-11-08.1",
       version: (chrome.runtime.getManifest && chrome.runtime.getManifest().version) || "",
     });
     // 顺手预热：SW 刚被唤醒时，settings 与持久化缓存都还没读。
